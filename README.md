@@ -1,93 +1,122 @@
-# MTXOR — Produtor/Consumidor com Threads (C / POSIX)
+# fdup — deteção de ficheiros duplicados por nome (via processos + exec)
 
-##  Descrição
+Projeto da UC **21111 — Sistemas Operativos** (e-fólio A)  
+Ficheiro: `fdup.c`
 
-Projeto académico em C que implementa o problema clássico **Produtor–Consumidor** usando **POSIX threads (pthreads)**.
+## Objetivo
 
-O programa gera uma sequência de **inteiros pseudo-aleatórios** (com `rand()` e semente fixa) e calcula o **XOR** global desses valores através de **múltiplas threads consumidoras** e **uma tarefa produtora** (o `main`).
+Este programa procura **ficheiros com o mesmo nome** (duplicados *por nome*, não por conteúdo) dentro de um diretório dado, usando uma sequência de **processos** (A, B, C, D, E) e chamadas `fork()` + `exec*()` para executar comandos do sistema.
 
----
+No final, imprime no terminal os nomes de ficheiros que aparecem em **mais do que uma pasta**, no formato:
 
-##  Funcionalidades (conforme `mtxor.c`)
-
-- **Buffer circular** partilhado (vetor dinâmico) com índices `bufe` (entrada) e `bufs` (saída)
-- **1 produtora** (função `main`) e **nt consumidoras** (`tcon`)
-- Sincronização com:
-  - **Mutex** (`pthread_mutex_t mtx_buf`) para região crítica do buffer
-  - **Variáveis de condição**:
-    - `nvazio` (consumidor espera quando o buffer está vazio)
-    - `ncheio` (sinalização quando há espaço/consumo)
-- Quando o buffer está cheio, o produtor faz **espera ativa** com libertação de CPU via `sched_yield()`
-- Cada consumidora acumula um **XOR local** e no fim atualiza o XOR global (`fxor`) e o total de operações (`top`)
-
----
-
-##  Conceitos aplicados
-
-- Programação concorrente
-- Exclusão mútua (regiões críticas)
-- Sincronização com *condition variables*
-- Buffer circular
-- Gestão de memória dinâmica
-
----
-
-##  Tecnologias
-
-- Linguagem C
-- POSIX Threads (`pthread`)
-- GCC / Linux (API POSIX)
-
----
-
-##  Compilação
-
-Recomendado (mais portátil/“correto” do que `-lpthread` em alguns ambientes):
-
-```bash
-gcc -Wall -pthread -o mtxor mtxor.c
+```
+<nome_ficheiro> <diretorio>
 ```
 
-(Em muitos sistemas isto também funciona: `gcc -Wall -o mtxor mtxor.c -lpthread`.)
+## Como funciona (pipeline)
 
----
+O processo **A** (main) cria e coordena os processos:
 
-##  Execução
+- **B**: executa `find` e grava em `tmp1.txt`
+  - Comando equivalente:
+    ```bash
+    find <dir> -type f -name "<nome>" -printf "%h %f\n"
+    ```
+  - Produz linhas no formato:
+    ```
+    <diretorio> <nome_ficheiro>
+    ```
+
+- **C**: executa `sort` sobre `tmp1.txt` e grava em `tmp2.txt`
+  - Ordena pela **2ª coluna** (nome do ficheiro):
+    ```bash
+    sort -t " " -k2,2 tmp1.txt
+    ```
+
+- **D**: executa `uniq` sobre `tmp2.txt` e grava em `tmp3.txt`
+  - Identifica **nomes repetidos**, ignorando a 1ª coluna (diretório) e mantendo apenas grupos duplicados:
+    ```bash
+    uniq -f1 -D tmp2.txt
+    ```
+
+- **E**: executa `awk` sobre `tmp3.txt` e escreve no terminal
+  - Troca a ordem dos campos para:
+    ```
+    <nome_ficheiro> <diretorio>
+    ```
+    Comando:
+    ```bash
+    awk "{print $2,$1}" tmp3.txt
+    ```
+
+### Nota sobre os prints de PID/PPID
+
+O programa imprime no terminal mensagens com PID/PPID:
+- O processo A imprime sempre.
+- Os processos B/C/D imprimem antes do `freopen()`, por isso aparecem no terminal.
+- O processo E imprime o resultado final do `awk` no terminal.
+
+## Ficheiros temporários
+
+O programa cria estes ficheiros **no diretório indicado** (porque faz `chdir(<dir>)`):
+
+- `tmp1.txt` — saída do `find`
+- `tmp2.txt` — saída do `sort`
+- `tmp3.txt` — saída do `uniq`
+
+> O código **não remove** estes ficheiros no fim.
+
+## Requisitos
+
+Precisas de ter disponíveis no sistema (Linux/WSL):
+- `find`
+- `sort`
+- `uniq`
+- `awk`
+- `gcc`
+
+## Compilação
 
 ```bash
-./mtxor dimbuf N nt
+gcc -Wall -Wextra -o fdup fdup.c
 ```
 
-### Parâmetros
+## Execução
 
-- **dimbuf** → tamanho do buffer (inteiro positivo)
-- **N** → número total de itens a processar (inteiro positivo)
-- **nt** → número de threads consumidoras (inteiro positivo)
+```bash
+./fdup <diretorio> <nome_ficheiro>
+```
 
 ### Exemplo
 
+Procurar ficheiros com nome `dados.txt` dentro de `/home/user/projeto`:
+
 ```bash
-./mtxor 21 22 5
+./fdup /home/user/projeto dados.txt
 ```
 
----
+Saída típica (exemplo):
 
-## Notas importantes sobre o funcionamento
+```
+Processo A: PID=... PPID=...
+Processo B: PID=... PPID=...
+Processo C: PID=... PPID=...
+Processo D: PID=... PPID=...
+Processo E: PID=... PPID=...
+dados.txt /home/user/projeto/pasta1
+dados.txt /home/user/projeto/pasta7
+```
 
-- O programa valida que existem **3 argumentos** e que são **inteiros positivos**.
-- A semente do gerador é fixa (`srand(737)`), logo a sequência gerada é reprodutível.
-- O buffer é **pré-preenchido** inicialmente com até `dimbuf` itens antes de criar as consumidoras.
-- As consumidoras retiram itens do buffer em blocos até `dimbuf/nt` por iteração (limitado por `bufc`).
-- **Nota de coerência**: o código aceita valores `>= 1` (condição `dimbuf < 1 || N < 1 || nt < 1`), mas a mensagem de erro diz “maiores que 1”.
+## Estrutura de argumentos e erros
 
----
-
-## Contexto académico
-
-Unidade curricular: **Sistemas Operativos**  
-(e-fólio B 2023–24)
-
----
+- Se não forem passados **exatamente 2 argumentos**, o programa termina com:
+  ```
+  Erro numero errado de argumentos
+  ```
+- Se o diretório não existir / não for acessível:
+  ```
+  Erro: Não foi possível acessar o diretório especificado.
+  ```
 
 ## 👨‍💻 Autor
 
