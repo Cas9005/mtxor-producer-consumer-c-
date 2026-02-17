@@ -1,6 +1,6 @@
 # MTXOR -- Producer / Consumer com Threads (C / POSIX)
 
-## 📌 Descrição
+## Descrição
 
 Projeto académico desenvolvido em linguagem C que implementa o problema
 clássico Produtor-Consumidor utilizando threads POSIX (pthreads).
@@ -11,7 +11,7 @@ múltiplas tarefas consumidoras e uma tarefa produtora.
 
 ------------------------------------------------------------------------
 
-## ⚙️ Funcionalidades
+## Funcionalidades
 
 -   Buffer circular partilhado\
 -   1 thread produtora (main)\
@@ -23,7 +23,7 @@ múltiplas tarefas consumidoras e uma tarefa produtora.
 
 ------------------------------------------------------------------------
 
-## 🧠 Conceitos Aplicados
+## Conceitos Aplicados
 
 -   Programação concorrente\
 -   Sincronização de threads\
@@ -34,7 +34,7 @@ múltiplas tarefas consumidoras e uma tarefa produtora.
 
 ------------------------------------------------------------------------
 
-## 🛠️ Tecnologias Utilizadas
+##  Tecnologias Utilizadas
 
 -   Linguagem C\
 -   POSIX Threads (pthread)\
@@ -43,7 +43,7 @@ múltiplas tarefas consumidoras e uma tarefa produtora.
 
 ------------------------------------------------------------------------
 
-## ▶️ Compilação
+## Compilação
 
 ``` bash
 gcc -Wall -o mtxor mtxor.c -lpthread
@@ -51,7 +51,7 @@ gcc -Wall -o mtxor mtxor.c -lpthread
 
 ------------------------------------------------------------------------
 
-## ▶️ Execução
+## Execução
 
 ``` bash
 ./mtxor dimbuf N nt
@@ -71,7 +71,7 @@ gcc -Wall -o mtxor mtxor.c -lpthread
 
 ------------------------------------------------------------------------
 
-## 📚 Contexto Académico
+##  Contexto Académico
 
 Projeto desenvolvido no âmbito da unidade curricular **Sistemas
 Operativos**\
@@ -79,7 +79,6 @@ Licenciatura em Engenharia Informática
 
 ------------------------------------------------------------------------
 
-## ⚠️ Nota
 
 Este projeto foi desenvolvido para fins académicos e demonstra conceitos
 de programação concorrente e sincronização de threads.
